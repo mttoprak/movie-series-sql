@@ -15,13 +15,25 @@ This project is an **SQL assignment** that includes the database schema and vari
 
 ---
 
+## ⚠️ Important Notice
+
+**Do not run all the example SQL queries at once!**
+
+The `homework.sql` file contains many example queries for learning and demonstration purposes. Running all of them together may cause your computer or database to freeze or crash. Please review and execute queries one by one as needed.
+
+If you only want to set up the database and insert the sample data, run only the table creation and data insertion sections at the top of `homework.sql`. **Do not run the example queries and views at the bottom for setup purposes.**
+
+See the [Setup](#setup) section for more information.
+
 ## Setup
 
 1. Create a PostgreSQL database.
-2. Run the `homework.sql` file in your database:
+2. Open the `homework.sql` file and copy only the table creation and data insertion sections (everything above the example queries and views).
+3. Run these sections in your database:
    ```sh
-   psql -U <username> -d <database_name> -f homework.sql
+   psql -U <username> -d <database_name> -f <your_table_and_data_file.sql>
    ```
+4. If you want to try the example queries, you can run them one by one after setup.
 
 ## Table Structure
 

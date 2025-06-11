@@ -1,21 +1,16 @@
--- Film ve Dizi Takip Sistemi: Tam Kurulum ve Sorgular
-
--- 1. TABLO OLUŞTURMA
-
-CREATE TABLE Users ( --Kullanıcılar
+CREATE TABLE Users (
     user_id SERIAL PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
     passw VARCHAR(255) NOT NULL
 );
 
-CREATE TABLE Contents ( -- 
+CREATE TABLE Contents (
     content_id SERIAL PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
     description TEXT,
     release_year INT CHECK (release_year BETWEEN 1900 AND 2025),
-    type VARCHAR(10) CHECK (type IN ('movie','series')) NOT NULL -- bu type enuma benziyor (tabiki tamamen değil) 
-    --ama bu ikisinden biri olmak zorunda
+    type VARCHAR(10) CHECK (type IN ('movie','series')) NOT NULL
 );
 
 CREATE TABLE Genres (
@@ -23,7 +18,7 @@ CREATE TABLE Genres (
     name VARCHAR(50) UNIQUE NOT NULL
 );
 
-CREATE TABLE ContentGenres (-- Genres ve Contentin buluştuğu 
+CREATE TABLE ContentGenres (
     content_id INT NOT NULL,
     genre_id   INT NOT NULL,
     PRIMARY KEY(content_id, genre_id),
@@ -31,14 +26,14 @@ CREATE TABLE ContentGenres (-- Genres ve Contentin buluştuğu
     FOREIGN KEY(genre_id)   REFERENCES Genres(genre_id)
 );
 
-CREATE TABLE SeriesSeasons ( --Diziler için
+CREATE TABLE SeriesSeasons (
     season_id     SERIAL PRIMARY KEY,
     content_id    INT NOT NULL,
     season_number INT NOT NULL,
     FOREIGN KEY(content_id) REFERENCES Contents(content_id)
 );
 
-CREATE TABLE Episodes ( -- bölümler
+CREATE TABLE Episodes (
     episode_id     SERIAL PRIMARY KEY,
     season_id      INT NOT NULL,
     episode_number INT NOT NULL,
@@ -46,24 +41,24 @@ CREATE TABLE Episodes ( -- bölümler
     FOREIGN KEY(season_id) REFERENCES SeriesSeasons(season_id)
 );
 
-CREATE TABLE WatchStatus (-- kullanıcının izleme bilgileri
+CREATE TABLE WatchStatus (
     status_id       SERIAL PRIMARY KEY,
     user_id         INT NOT NULL,
     content_id      INT NOT NULL,
     status          VARCHAR(15) CHECK (status IN ('watching','watched','plan_to_watch')) NOT NULL,
     current_season  INT DEFAULT 0,
     current_episode INT DEFAULT 0,
-    current_second  INT DEFAULT 0, --saniyeden hesaplanabilir kaçıncı dk'da olduğu
+    current_second  INT DEFAULT 0,
     UNIQUE(user_id, content_id),
     FOREIGN KEY(user_id)    REFERENCES Users(user_id),
     FOREIGN KEY(content_id) REFERENCES Contents(content_id)
 );
 
-CREATE TABLE Ratings ( -- içeriği puanlamak için
+CREATE TABLE Ratings (
     rating_id  SERIAL PRIMARY KEY,
     user_id    INT NOT NULL,
     content_id INT NOT NULL,
-    rating     SMALLINT CHECK (rating BETWEEN 1 AND 10), --imdb skor gibi
+    rating     SMALLINT CHECK (rating BETWEEN 1 AND 10),
     UNIQUE(user_id, content_id),
     FOREIGN KEY(user_id)    REFERENCES Users(user_id),
     FOREIGN KEY(content_id) REFERENCES Contents(content_id)
@@ -74,13 +69,13 @@ CREATE TABLE Comments (
     user_id      INT NOT NULL,
     content_id   INT NOT NULL,
     comment      TEXT NOT NULL,
-    comment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- since 1970 😀
+    comment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(user_id, content_id),
     FOREIGN KEY(user_id)    REFERENCES Users(user_id),
     FOREIGN KEY(content_id) REFERENCES Contents(content_id)
 );
 
--- Veriler
+-- Data
 
 INSERT INTO Users(username, email, passw) VALUES
 ('omer','omerdemirel@proton.me','CroswIn9mON'),
@@ -178,103 +173,102 @@ INSERT INTO Comments(user_id, content_id, comment) VALUES
 
 
 
--- TANIMLARI
+-- DEFINITIONS
 
 
 
+-- Basic Selection (SELECT):
 
--- Basit Seçim (SELECT):
-
--- Kullanıcı adlarını ve e-posta adreslerini alfabetik sıraya göre listeler
+-- Lists usernames and emails in alphabetical order
 SELECT username, email FROM Users ORDER BY username;
 
--- 2010 ve sonrası çıkan içerikleri, en yeniden eskiye doğru sıralar
+-- Lists contents released in 2010 or later, sorted from newest to oldest
 SELECT title, release_year FROM Contents WHERE release_year >= 2010 ORDER BY release_year DESC;
 
--- Şu anda izlenmekte olan içeriklerin tüm verilerini getirir
+-- Retrieves all data of currently watched contents
 SELECT * FROM WatchStatus WHERE status = 'watching';
 
--- İzleme durumu "watching" olan ve 300 saniyeden fazla izlenmiş içerikleri, kullanıcı adı ve saniyesiyle birlikte getirir
+-- Retrieves contents with status "watching" and watched more than 300 seconds, along with username and seconds
 SELECT u.username, w.current_second 
 FROM Users u 
 JOIN WatchStatus w ON u.user_id = w.user_id 
 WHERE w.status = 'watching' AND w.current_second > 300;
 
--- Agggregate fonksiyonları,
+-- Aggregate functions,
 
--- Toplam kullanıcı sayısını verir
+-- Returns the total number of users
 SELECT COUNT(*) AS total_users FROM Users;
 
--- Belirli bir içeriğin (id=1) ortalama puanını hesaplar
+-- Calculates the average rating for a specific content (id=1)
 SELECT AVG(rating) AS avg_rating FROM Ratings WHERE content_id = 1;
 
--- İçeriklerin en erken ve en geç çıkış yıllarını verir
+-- Returns the earliest and latest release years of contents
 SELECT MIN(release_year) AS earliest, MAX(release_year) AS latest FROM Contents;
 
--- Gruplama (GROUP BY):
+-- Grouping (GROUP BY):
 
--- İçerikleri türlerine göre gruplar ve her türden kaç tane olduğunu gösterir
+-- Groups contents by type and shows the count for each type
 SELECT type, COUNT(*) AS cnt FROM Contents GROUP BY type;
 
--- "Watched" olarak işaretlenmiş içerikleri içerik id'lerine göre gruplar ve 2 veya daha fazla kez izlenmiş olanları getirir
+-- Groups contents marked as "watched" by content id and returns those watched 2 or more times
 SELECT content_id, COUNT(*) AS watch_count 
 FROM WatchStatus 
 WHERE status = 'watched' 
 GROUP BY content_id 
 HAVING COUNT(*) >= 2;
 
--- Türlere göre içerik sayısını verir ve en çoktan aza doğru sıralar
+-- Returns the number of contents by genre and sorts from most to least
 SELECT g.name AS genre, COUNT(*) AS total 
 FROM Genres g 
 JOIN ContentGenres cg ON g.genre_id = cg.genre_id 
 GROUP BY g.name 
 ORDER BY total DESC;
 
--- Birleştirme (JOIN):
+-- Join (JOIN):
 
--- Kullanıcı adını, içerik başlığını ve puanını birleştirerek getirir
+-- Retrieves username, content title, and rating together
 SELECT u.username, c.title, r.rating 
 FROM Ratings r 
 JOIN Users u ON r.user_id = u.user_id 
 JOIN Contents c ON r.content_id = c.content_id;
 
--- Her içeriğin başlığını ve varsa puanını getirir (puan yoksa NULL)
+-- Retrieves each content's title and its rating if available (NULL if no rating)
 SELECT c.title, r.rating 
 FROM Contents c 
 LEFT JOIN Ratings r ON c.content_id = r.content_id;
 
--- İzlenme durumlarındaki içerik başlığı ve durumu getirir (bazı içerikler NULL olabilir)
+-- Retrieves content title and status from watch statuses (some contents may be NULL)
 SELECT c.title, w.status 
 FROM Contents c 
 RIGHT JOIN WatchStatus w ON c.content_id = w.content_id;
 
--- Kullanıcıların yaptığı yorumları getirir, kullanıcılar ve yorumlar eşleşir, eşleşmeyenler de görünür (FULL OUTER JOIN)
+-- Retrieves user comments, matches users and comments, unmatched ones are also shown (FULL OUTER JOIN)
 SELECT u.username, cm.comment 
 FROM Users u 
 FULL OUTER JOIN Comments cm ON u.user_id = cm.user_id;
 
--- Alt Sorgular (Subqueries):
+-- Subqueries:
 
--- Puanı 9 veya üzeri olan içerikleri getirir
+-- Retrieves contents with a rating of 9 or higher
 SELECT * FROM Contents 
 WHERE content_id IN (
     SELECT content_id FROM Ratings WHERE rating >= 9
 );
 
--- Kullanıcı adı 'ali' olan kişinin izleme durumunu getirir
+-- Retrieves the watch status of the user with username 'ali'
 SELECT * FROM WatchStatus 
 WHERE user_id = (
     SELECT user_id FROM Users WHERE username = 'ali'
 );
 
--- En son çıkan içeriğin başlığını ve yılını getirir
+-- Retrieves the title and year of the most recently released content
 SELECT title, release_year 
 FROM Contents 
 WHERE release_year = (
     SELECT MAX(release_year) FROM Contents
 );
 
--- İçeriklerin izlenme sayılarının ortalamasını verir (alt sorguyla gruplandıktan sonra)
+-- Returns the average number of watches per content (after grouping by subquery)
 SELECT AVG(sub.watch_count) AS avg_watches 
 FROM (
     SELECT content_id, COUNT(*) AS watch_count 
@@ -282,9 +276,9 @@ FROM (
     GROUP BY content_id
 ) AS sub;
 
--- Görünümler (VIEWs):
+-- Views:
 
--- Ortalama puanı 8 ve üzeri olan içeriklerden bir görünüm oluşturur
+-- Creates a view for contents with an average rating of 8 or higher
 CREATE VIEW HighlyRatedContents AS 
 SELECT c.title, AVG(r.rating) AS avg_rating 
 FROM Contents c 
@@ -292,47 +286,47 @@ JOIN Ratings r ON c.content_id = r.content_id
 GROUP BY c.title 
 HAVING AVG(r.rating) >= 8;
 
--- Bu görünümden en yüksek puanlı içerikleri listeler
+-- Lists the highest rated contents from this view
 SELECT * FROM HighlyRatedContents ORDER BY avg_rating DESC;
 
--- Kullanıcıların yaptığı toplam yorum sayılarını tutan bir görünüm oluşturur
+-- Creates a view that holds the total number of comments made by users
 CREATE VIEW UserCommentSummary AS 
 SELECT u.username, COUNT(cm.comment_id) AS comment_count 
 FROM Users u 
 LEFT JOIN Comments cm ON u.user_id = cm.user_id 
 GROUP BY u.username;
 
--- 2’den fazla yorumu olan kullanıcıları listeler
+-- Lists users with more than 2 comments
 SELECT * FROM UserCommentSummary WHERE comment_count > 2;
 
--- Küme Operatörleri:
+-- Set Operators:
 
--- Filmleri ve dizileri birleştirerek tekrar etmeden tüm başlıkları getirir
+-- Retrieves all titles by combining movies and series without duplicates
 SELECT title FROM Contents WHERE type = 'movie' 
 UNION 
 SELECT title FROM Contents WHERE type = 'series';
 
--- 1990-2000 yılları arasında hem film hem dizi olan içerikleri getirir
+-- Retrieves contents that are both movies and series between 1990-2000
 SELECT title FROM Contents 
 WHERE release_year BETWEEN 1990 AND 2000 AND type = 'movie' 
 INTERSECT 
 SELECT title FROM Contents 
 WHERE release_year BETWEEN 1990 AND 2000 AND type = 'series';
 
--- 2000den ömce çıkan ve türü dizi olmayanları getirir
+-- Retrieves contents released before 2000 and not of type series
 SELECT title FROM Contents 
 WHERE release_year < 2000 
 EXCEPT 
 SELECT title FROM Contents WHERE type = 'series';
 
--- Veri Manipülasyonu (DML):
+-- Data Manipulation (DML):
 
--- 'mehmet' adlı kullanıcının 'Matrix' içeriğine verdiği puanı 9 olarak günceller
+-- Updates the rating of 'mehmet' for the content 'Matrix' to 9
 UPDATE Ratings 
 SET rating = 9 
 WHERE user_id = (SELECT user_id FROM Users WHERE username = 'mehmet') 
 AND content_id = (SELECT content_id FROM Contents WHERE title = 'Matrix');
 
--- Planlanan ama henüz hiç başlanmamış (0. saniyede olan) izleme kayıtlarını siler
+-- Deletes watch records that are planned but not started yet (at 0 seconds)
 DELETE FROM WatchStatus 
 WHERE status = 'plan_to_watch' AND current_second = 0;

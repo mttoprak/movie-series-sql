@@ -15,13 +15,25 @@ Bu proje, bir film ve dizi takip sisteminin temel veritabanı şemasını ve çe
 
 ---
 
+## ⚠️ Önemli Uyarı
+
+**Tüm örnek SQL sorgularını aynı anda çalıştırmayınız!**
+
+`homework.sql` dosyasında öğrenme ve gösterim amaçlı birçok örnek sorgu bulunmaktadır. Bunların hepsini aynı anda çalıştırmak bilgisayarınızın veya veritabanınızın donmasına ya da çökmesine neden olabilir. Lütfen sorguları ihtiyacınıza göre tek tek inceleyip çalıştırınız.
+
+Eğer sadece veritabanını kurmak ve örnek verileri eklemek istiyorsanız, `homework.sql` dosyasının en üstündeki tablo oluşturma ve veri ekleme bölümlerini çalıştırınız. **Kurulum için dosyanın altındaki örnek sorguları ve görünümleri çalıştırmayınız.**
+
+Daha fazla bilgi için [Kurulum](#kurulum) bölümüne bakınız.
+
 ## Kurulum
 
 1. Bir PostgreSQL veritabanı oluşturun.
-2. `homework.sql` dosyasını veritabanınıza çalıştırın:
+2. `homework.sql` dosyasını açıp sadece tablo oluşturma ve veri ekleme bölümlerini (örnek sorgular ve görünümlerden öncesini) kopyalayın.
+3. Bu bölümleri veritabanınızda çalıştırın:
    ```sh
-   psql -U <kullanıcı_adı> -d <veritabanı_adı> -f homework.sql
+   psql -U <kullanıcı_adı> -d <veritabanı_adı> -f <tablo_ve_veri_dosyası.sql>
    ```
+4. Örnek sorguları denemek isterseniz, kurulumdan sonra bunları tek tek çalıştırabilirsiniz.
 
 ## Tablo Yapısı
 
